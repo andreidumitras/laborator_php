@@ -49,9 +49,19 @@
 	function query_db_login($username, $password) 
 	{
 		// try?
+		if ($username == "" || $password == "")
+		{
+			echo "Username or password is (or both are) empty. Please try again.";
+			return null;
+		}
 		$conn = get_mysqli();
 		$found = null;
 
+		if (xss($username))
+		{
+			echo "Something is fishy about the username that you entered. Please type it in a appropriate manner.";
+			return null;
+		}
 		// encrypt the password using md5
 		$pass_hashed = md5($password);
 		$query = "SELECT username, password FROM users WHERE username = ? AND password = ?";
@@ -118,8 +128,9 @@
 			//$results = array();
 			if (xss($message))
 			{
-				$conn->close();
-				exit;
+				//$conn->close();
+				echo "Something is fishy with that comment! Try to review your message.";
+				return;
 			}
 			$query = "INSERT INTO messages (username, message) VALUES (?, ?)";
 			$stmt = $conn->prepare($query);

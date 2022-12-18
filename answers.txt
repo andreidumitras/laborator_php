@@ -1,0 +1,53 @@
+1. query_db_login($username, $password)
+Vulnerability 1: SQL injections
+    - the query will be composed by the strings given in 'username' and 'password' given as parameters in the function.
+    - if there are inserted some special SQL characters or a different logic, the query will do what was not designed to do initially.
+Vulnerability 2: XSS
+     - the username provided as a login parameter will appear on the top of the user profile page.
+     - any special HTML character, could provide a different layout and insert different source code to be executed by the browser engine at runtime.
+
+Solution vulberability 1: prepared statement
+    - the usage of the prepared statements provide parametrized queryes.
+Solution vulberability 2: sanity checks for tag characters
+    - a boolean function was implemented to return true if the characters '<' or '>' are found in the provided string.
+    - if the string is suspected of XSS, then the flow will be interrupred and the user will be suggested to review the entered string.
+
+
+2. get_message_rows()
+Vulnerability: XSS
+    - the function will return the list of messages that corresponds to their users
+    - if a message has a '<' or '>' character, can be suspected by xss
+    - that could lead for the client browser to execute something different that was intended.
+Solution: sanity check for HTML inside the add_message_for_users function
+    - a sanity check is done in the function add_message_for_users() that deals with the input messages.
+
+
+3. add_message_for_user($username, $message)
+Vulnerability: XSS
+    - the function will store into the database the messages typed by the users;
+    - if a message has a '<' or '>' character, can be suspected by xss
+    - storing them as they are, can lay down to uploading different scripts, or other XSS abuses.
+Solution: sanity check for HTML tags when adding the messages in the database
+    - the sanity check xss function will return true if the passed string is suspected to hold some HTML tags.
+
+
+4. is_valid_image($image_path)
+Vulnerability: Unrestricted file upload
+    - the user can upload any kind of file, even virus.exe instead of a photo.jpg.
+Solution: restrict and decice the supported file formats
+    - the application must accept only the predefined image formats. The others will be neglected.
+    - the uploaded files will be verified with finfo_file() which returns details about the given file.
+    - if the information is compatible with the alowed file types then the file is ok.
+
+
+5. add_photo_path_to_user($username, $file_userphoto)
+Vulnerability: Unrestricted file upload
+    - the file must be verified and restricted to be only of the allowed types.
+
+Solution: restrict the accepted file types
+    - the function is_valid_image() will deal with it.    
+
+
+6. get_photo_path_for_user($username)
+7. get_memo_content_for_user($username, $memoname)
+8. get_language_php($language)
