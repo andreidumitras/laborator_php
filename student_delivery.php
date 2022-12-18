@@ -34,9 +34,18 @@
 	*/
 
 
+	// function that checks is the string passed as parameter has an xss inside.
+	function xss($str)
+	{
+		if (strchr($str, "<") != "" && strchr($str,">") != "")
+			return true;
+		return false;
+	}
+
 	// we recieve the username and its password.
 	// we hash the password
 	// we compare the hashed password with one stored inside the database for the given username. 
+
 	function query_db_login($username, $password) 
 	{
 		// try?
@@ -52,7 +61,7 @@
 		$result = $stmt->get_result();
 
 		$row1 = $result->fetch_assoc();
-		echo $row1["username"] . "<br>" . $row1["password"];
+		// echo $row1["username"] . "<br>" . $row1["password"];
 
 		if (count($row1) <= 0)
 		{
@@ -107,7 +116,11 @@
 		{
 			$conn = get_mysqli();
 			//$results = array();
-			
+			if (xss($message))
+			{
+				$conn->close();
+				exit;
+			}
 			$query = "INSERT INTO messages (username, message) VALUES (?, ?)";
 			$stmt = $conn->prepare($query);
 			$stmt->bind_param("ss", $username, $message);           // ss = string, string
@@ -166,9 +179,9 @@
 			echo "Something is not appropriate with the photo: " . $file_userphoto;
 			return;
 		}
-		$query = "INSERT INTO users (file_userphoto) VALUES (?)";
+		$query = "UPDATE users SET file_userphoto = ? WHERE username = ?";
 		$stmt = $conn->prepare($query);
-		$stmt->bind_param("s", $file_userphoto);           // ss = string, string
+		$stmt->bind_param("ss", $file_userphoto, $username);           // ss = string, string
 		$stmt->execute();
 
 		$conn->close();
@@ -194,9 +207,14 @@
 		$stmt->bind_param("s", $username);           // ss = string, string
 		$stmt->execute();
 		$result = $stmt->get_result()->fetch_assoc();
-		echo "helloooooo" . $result;
-// aiCI AM RAMAS CU EDITATUL... HAI CA SE POATE.
+		if (count($result) <= 0)
+		{
+			$conn->close();
+			return null;
+		}
+		$path = $result["file_userphoto"];
 		$conn->close();
+		echo $path . '<br>';
 		return $path;
 	}
 
@@ -211,9 +229,20 @@
 			string containing the data from the memo file (it's content)
 			"No such file!" if there's no such file.
 	*/
-	function get_memo_content_for_user($username, $memoname) 
+	function get_memo_content_for_user($username, $memoname)
 	{
-
+		if (strchr($memoname, "/") || strchr($memoname, "\\" ))
+		{
+			echo "Suspect file name." . "<br>";
+			echo "Try to refer only by the memo name that you stored." . "<br>";
+			return "";
+		}
+		$path = "users/" . $username . "/" . $memoname;
+		echo $path;
+		$content = file_get_contents($path);
+		if (!$content)
+			return "No such file!";
+		return nl2br($content);
 	}
 
 	/* 
@@ -225,6 +254,7 @@
 		After that, modify the get_language_php function to no longer present a security risk.
 		This function is used in index.php
 	*/
+	
 	/*
 		This function must return the path to the language file corresponding to the desired language or null if the file
 		does not exist. All language files must be in the language folder or else they are not supported.
@@ -236,6 +266,12 @@
 	*/
 	function get_language_php($language)
 	{
+		if (strchr($language, "/") || strchr($language, "\\" ))
+		{
+			echo "The language that you set is suspect" . "<br>";
+			echo "Try to refer only to the supported languages [en, ro]." . "<br>";
+			return null;
+		}
 		$language_path = "language/" . $language . ".php";
 		if (is_file($language_path))
 		{
