@@ -48,20 +48,22 @@
 
 	function query_db_login($username, $password) 
 	{
-		// try?
+		// check for empty input
 		if ($username == "" || $password == "")
 		{
 			echo "Username or password is (or both are) empty. Please try again.";
 			return null;
 		}
+
+		// initialize the function.
 		$conn = get_mysqli();
 		$found = null;
 
-		if (xss($username))
-		{
-			echo "Something is fishy about the username that you entered. Please type it in a appropriate manner.";
-			return null;
-		}
+		//if (xss($username))
+		//{
+		//	echo "Something is fishy about the username that you entered. Please type it in a appropriate manner.";
+		//	return null;
+		//}
 		// encrypt the password using md5
 		$pass_hashed = md5($password);
 		$query = "SELECT username, password FROM users WHERE username = ? AND password = ?";
@@ -69,10 +71,7 @@
 		$stmt->bind_param("ss", $username, $pass_hashed);           // ss = string, string
 		$stmt->execute();
 		$result = $stmt->get_result();
-
 		$row1 = $result->fetch_assoc();
-		// echo $row1["username"] . "<br>" . $row1["password"];
-
 		if (count($row1) <= 0)
 		{
 			$conn->close();
@@ -122,23 +121,25 @@
 	*/
 	function add_message_for_user($username, $message) 
 	{
-		if ($message != null)
+		// empty textbox check for message
+		if ($message == "")
 		{
-			$conn = get_mysqli();
-			//$results = array();
-			if (xss($message))
-			{
-				//$conn->close();
-				echo "Something is fishy with that comment! Try to review your message.";
-				return;
-			}
-			$query = "INSERT INTO messages (username, message) VALUES (?, ?)";
-			$stmt = $conn->prepare($query);
-			$stmt->bind_param("ss", $username, $message);           // ss = string, string
-			$stmt->execute();
-
-			$conn->close();
+			echo "empty message.";
+			return;
 		}
+		// sanity check for XSS
+		if (xss($message))
+		{
+			echo "Something is fishy with that comment! Try to review your message.";
+			return;
+		}
+
+		$conn = get_mysqli();
+		$query = "INSERT INTO messages (username, message) VALUES (?, ?)";
+		$stmt = $conn->prepare($query);
+		$stmt->bind_param("ss", $username, $message);           // ss = string, string
+		$stmt->execute();
+		$conn->close();
 	}
 
 	/* Implement is_valid_image - this function is used in index.php */
@@ -152,23 +153,25 @@
 	*/
 	function is_valid_image($image_path)
 	{
-		if ($image_path != null)
+		if ($image_path == null)
 		{
-			$finfo = finfo_open(FILEINFO_MIME_TYPE);
-			$supported_images = array("jpg", "jpeg", "png", "gif", "bmp", "ico");
-			$type = finfo_file($finfo, $image_path);
-			foreach ($supported_images as $extension)
-			{
-				$extension = "image/" . $extension;
-				if ($type == $extension)
-				{
-					finfo_close($finfo);
-					return true;					
-				}
-			}
-			finfo_close($finfo);
+			echo "null image path!";
 			return false;
 		}
+		$finfo = finfo_open(FILEINFO_MIME_TYPE);
+		$supported_images = array("jpg", "jpeg", "png", "gif", "bmp", "ico");
+		$type = finfo_file($finfo, $image_path);
+		foreach ($supported_images as $extension)
+		{
+			$extension = "image/" . $extension;
+			if ($type == $extension)
+			{
+				finfo_close($finfo);
+				return true;					
+			}
+		}
+		finfo_close($finfo);
+		return false;
 	}
 
 	/* Implement add_photo_to_user - this function is used in index.php */
@@ -183,13 +186,12 @@
 	*/
 	function add_photo_path_to_user($username, $file_userphoto) 
 	{
-		$conn = get_mysqli();
 		if (!is_valid_image($file_userphoto))
 		{
-			$conn->close();
 			echo "Something is not appropriate with the photo: " . $file_userphoto;
 			return;
 		}
+		$conn = get_mysqli();
 		$query = "UPDATE users SET file_userphoto = ? WHERE username = ?";
 		$stmt = $conn->prepare($query);
 		$stmt->bind_param("ss", $file_userphoto, $username);           // ss = string, string
@@ -218,11 +220,6 @@
 		$stmt->bind_param("s", $username);           // ss = string, string
 		$stmt->execute();
 		$result = $stmt->get_result()->fetch_assoc();
-		if (count($result) <= 0)
-		{
-			$conn->close();
-			return null;
-		}
 		$path = $result["file_userphoto"];
 		$conn->close();
 		echo $path . '<br>';
@@ -242,14 +239,16 @@
 	*/
 	function get_memo_content_for_user($username, $memoname)
 	{
-		if (strchr($memoname, "/") || strchr($memoname, "\\" ))
+		if (strchr($memoname, "/") ||
+			strchr($memoname, "\\" ) ||
+			strchr($memoname, "%" ) ||
+			strchr($memoname, "#" ))
 		{
 			echo "Suspect file name." . "<br>";
 			echo "Try to refer only by the memo name that you stored." . "<br>";
 			return "";
 		}
 		$path = "users/" . $username . "/" . $memoname;
-		echo $path;
 		$content = file_get_contents($path);
 		if (!$content)
 			return "No such file!";

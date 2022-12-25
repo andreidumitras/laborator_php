@@ -1,66 +1,86 @@
+FUNCTIONS DISCUSION:
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 1. query_db_login($username, $password)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Vulnerability 1: SQL injections
-    - the query will be composed by the strings given in 'username' and 'password' given as parameters in the function.
-    - if there are inserted some special SQL characters or a different logic, the query will do what was not designed to do initially.
-Vulnerability 2: XSS
-     - the username provided as a login parameter will appear on the top of the user profile page.
-     - any special HTML character, could provide a different layout and insert different source code to be executed by the browser engine at runtime.
-
-Solution vulberability 1: prepared statement
-    - the usage of the prepared statements provide parametrized queryes.
-Solution vulberability 2: sanity checks for tag characters
-    - a boolean function was implemented to return true if the characters '<' or '>' are found in the provided string.
-    - if the string is suspected of XSS, then the flow will be interrupred and the user will be suggested to review the entered string.
+    - in the username and password textboxes could be inserted some SQL statements.
+Solution 1: prepared statement query
+    - the strings provided by the textboxes must be treated as parameters for the querry, not as simple character strings that could be only attacted to the required SQL statement.
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 2. get_message_rows()
-Vulnerability: XSS
-    - the function will return the list of messages that corresponds to their users
-    - if a message has a '<' or '>' character, can be suspected by xss
-    - that could lead for the client browser to execute something different that was intended.
-Solution: sanity check for HTML inside the add_message_for_users function
-    - a sanity check is done in the function add_message_for_users() that deals with the input messages.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ - it is not vulnerable to anything.
+ - the function only provides the messages stored in the database.
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 3. add_message_for_user($username, $message)
-Vulnerability: XSS
-    - the function will store into the database the messages typed by the users;
-    - if a message has a '<' or '>' character, can be suspected by xss
-    - storing them as they are, can lay down to uploading different scripts, or other XSS abuses.
-Solution: sanity check for HTML tags when adding the messages in the database
-    - the sanity check xss function will return true if the passed string is suspected to hold some HTML tags.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Vulnerability 1: XSS
+    - the function stores the message provided as parameter into the database
+    - the message could contain HTML/php code that, when displayed, it will be interpreted by the browser and do whatever the attacker programmed to do.
+Solution 1: sanity check for HTML/php code characters
+    - the xss function performs a sanity check to see if the provided string contains characters like: '<' and '>'
+
+Vulnerability 2: SQL injections
+    - the message that follows to be stored into the database could contain SQL commands instead of simple text and could alter the initial query logic.
+Solution 2: prepared statement query
+    - the string provided by the textboxe must be treated as a parameter for the query.
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 4. is_valid_image($image_path)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Vulnerability: Unrestricted file upload
     - the user can upload any kind of file, even virus.exe instead of a photo.jpg.
-Solution: restrict and decice the supported file formats
-    - the application must accept only the predefined image formats. The others will be neglected.
-    - the uploaded files will be verified with finfo_file() which returns details about the given file.
-    - if the information is compatible with the alowed file types then the file is ok.
+Solution: restrict to the supported files
+    - only the photos that are interpreted as images must be allowed.
+    - the function finfo_file provides information about the given file. 
 
 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 5. add_photo_path_to_user($username, $file_userphoto)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Vulnerability: Unrestricted file upload
-    - the file must be verified and restricted to be only of the allowed types.
+    - the function uploads a file that could be dangerous.
+Solution: implement is_valid_image function
+    - the function restricts the supported files that are allowed to be uploaded.
 
-Solution: restrict the accepted file types
-    - the function is_valid_image() will deal with it.    
 
-
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 6. get_photo_path_for_user($username)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ - it is not vulnerable.
+ - it only displais the photo that has been supposed to be safe already.
 
 
-
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 7. get_memo_content_for_user($username, $memoname)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Vulnerability 1: XSS
+    - the uploaded memo could be a HTML file or of other web scripting language.
+    - the file content could be executed instead of been listed.
+Solution: treat the file content only as a text to be displayed.
+    - the htmlentities function convert all applicable HTML characters to text to be displayed.
+    - the nl2br function displayes the text according to its new line characters.
+
+Vulnerability 2: path traversal
+    - the memoname string could contain a path to somewhere with the intent to acces some files from the server.
+Solution 2: sanity check for path characters
+    - characters such as '/' and '\' (or even '%' or '#') must not be accepted to be present inside the memoname string.
 
 
-
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 8. get_language_php($language)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Vulnerability 1: Path traversal
     - someone could insert path characters ans access unallowed things.
-Vulnerability 2: File inclusion
-    - instead of en/ro or the supported language files, someone could include a different script file.
+Solution 1: sanity check for path characters
+    - characters such as '/', '\' and even '%', '#', '<' and '>', (just in case.) must not be present inside the language string.
 
-Solution for vulberability 1: sanity check for '/', '\' and even '%', '#', '<' and '>', just in case.
-Solution for vulberability 2: constraints for the language variable.
+    Vulnerability 2: File inclusion
+    - instead of en/ro or the supported language files, someone could include a different script file.
+Solution 2: restrict language string only to the supported ones.
+    - let the language variable to be only of the supported types: en, ro.
