@@ -49,5 +49,18 @@ Solution: restrict the accepted file types
 
 
 6. get_photo_path_for_user($username)
+
+
+
 7. get_memo_content_for_user($username, $memoname)
+
+
+
 8. get_language_php($language)
+Vulnerability 1: Path traversal
+    - someone could insert path characters ans access unallowed things.
+Vulnerability 2: File inclusion
+    - instead of en/ro or the supported language files, someone could include a different script file.
+
+Solution for vulberability 1: sanity check for '/', '\' and even '%', '#', '<' and '>', just in case.
+Solution for vulberability 2: constraints for the language variable.

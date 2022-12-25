@@ -253,7 +253,7 @@
 		$content = file_get_contents($path);
 		if (!$content)
 			return "No such file!";
-		return nl2br($content);
+		return nl2br(htmlentities($content));
 	}
 
 	/* 
@@ -277,17 +277,29 @@
 	*/
 	function get_language_php($language)
 	{
-		if (strchr($language, "/") || strchr($language, "\\" ))
+		if (strchr($language, "/") ||
+			strchr($language, "\\" ) ||
+			strchr($language, '%') ||
+			strchr($language, '<') ||
+			strchr($language, '>') ||
+			strchr($language, '#'))
 		{
 			echo "The language that you set is suspect" . "<br>";
 			echo "Try to refer only to the supported languages [en, ro]." . "<br>";
 			return null;
 		}
-		$language_path = "language/" . $language . ".php";
-		if (is_file($language_path))
+		$supported_languages = array("en", "ro");
+		foreach ($supported_languages as $lang)
 		{
-			return $language_path;
-		}
+			if ($lang == $language)
+			{
+				$language_path = "language/" . $language . ".php";
+				if (is_file($language_path))
+				{
+					return $language_path;
+				}
+			}
+		}		
 		return null;
 	}
 ?>
